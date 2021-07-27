@@ -18,7 +18,10 @@
     "lib": [
       "es2018",
       "dom"
-    ]
+    ],
+    "paths": {
+      "three-full": ["node_modules/@types/three"]
+    }
   },
   "angularCompilerOptions": {
     "fullTemplateTypeCheck": true,

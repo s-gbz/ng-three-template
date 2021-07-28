@@ -24,6 +24,9 @@ export class EngineService implements OnDestroy {
   private mixer: THREE.AnimationMixer;
   private clock = new THREE.Clock();
 
+  private textDropAction: THREE.AnimationAction;
+  textMixer: THREE.AnimationMixer;
+
   public constructor(private ngZone: NgZone) { }
 
   public createScene(canvas: ElementRef<HTMLCanvasElement>) {
@@ -90,7 +93,7 @@ export class EngineService implements OnDestroy {
     console.log("startBoxAnimation");
     const boxOpen = this.mixer.clipAction(this.animations[0]);
     const boxClose = this.mixer.clipAction(this.animations[1]);
-    const emptyFall = this.mixer.clipAction(this.animations[2]);
+    const emptyFall = this.textDropAction;
 
     // boxOpen.clampWhenFinished = true;
     // boxClose.clampWhenFinished = true;
@@ -102,7 +105,7 @@ export class EngineService implements OnDestroy {
 
     boxOpen.play();
 
-    this.mixer.addEventListener("loop", (e) => {
+    this.mixer?.addEventListener("loop", (e) => {
       console.log("startBoxAnimation loop event. Action: ", e.action);
 
       if (e.action._clip.name === "box_open") {
@@ -111,6 +114,7 @@ export class EngineService implements OnDestroy {
         // boxOpen.paused = true;
         boxOpen.stop();
         emptyFall.play();
+        this.textDropAction.play();
       }
 
       if (e.action._clip.name === "empty_falling") {
@@ -140,16 +144,15 @@ export class EngineService implements OnDestroy {
       });
 
       const textMesh = new Mesh(textGeometry);
-      // const empty_falling = this.scene.children[2].children[3]; //. getObjectByName("empty_falling");
-      // textMesh.parent = empty_falling;
-      // const textMixer = new AnimationMixer(textMesh);
-      textMesh.animations.concat(this.animations[2]);
+      this.textMixer = new AnimationMixer(textMesh);
+      this.textDropAction = this.textMixer.clipAction(this.animations[2]);
 
-      // this.scene.children[2].children[3].attach(textMesh)
-      
-      // console.log(this.scene.children[2].children[3]);
-      console.log(this.scene);
-      
+
+      console.log("textMesh ", textMesh);
+      console.log("textMixer ", this.textMixer);
+      console.log("textDropAction ", this.textDropAction);
+
+
       this.scene.add(textMesh);
     });
   }
@@ -183,11 +186,10 @@ export class EngineService implements OnDestroy {
     });
 
     // IMPORTANT to enable the animation
-    if (this.mixer) {
-      this.mixer.update(0.02); // BETTER
-      // this.mixer.update(0.1); // For debugging
-      // this.mixer.update(this.clock.getDelta());
-    }
+    this.mixer?.update(0.02); // BETTER
+    this.textMixer?.update(0.02);
+    // this.mixer.update(0.1); // For debugging
+    // this.mixer.update(this.clock.getDelta());
     this.renderer.render(this.scene, this.camera);
   }
 

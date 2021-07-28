@@ -10,6 +10,6 @@ export class AppComponent {
   public constructor(private engServ: EngineService) { }
 
   @HostListener('click', ['$event']) onClick(event) {
-    this.engServ.printCameraInformation();
+    // this.engServ.printCameraInformation();
  }
 }

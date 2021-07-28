@@ -25,7 +25,7 @@ export class EngineService implements OnDestroy {
   private clock = new THREE.Clock();
 
   private textDropAction: THREE.AnimationAction;
-  textMixer: THREE.AnimationMixer;
+  private textMixer: THREE.AnimationMixer;
 
   public constructor(private ngZone: NgZone) { }
 
@@ -90,46 +90,62 @@ export class EngineService implements OnDestroy {
   }
 
   public startBoxAnimation() {
-    console.log("startBoxAnimation");
-    const boxOpen = this.mixer.clipAction(this.animations[0]);
-    const boxClose = this.mixer.clipAction(this.animations[1]);
-    const emptyFall = this.textDropAction;
+    if (this.textDropAction) {
+      console.log("startBoxAnimation");
 
-    // boxOpen.clampWhenFinished = true;
-    // boxClose.clampWhenFinished = true;
-    // emptyFall.clampWhenFinished = true;
+      const boxOpen = this.mixer.clipAction(this.animations[0]);
+      const boxClose = this.mixer.clipAction(this.animations[1]);
+      const emptyFall = this.textDropAction;
 
-    // boxOpen.loop = LoopOnce;
-    // boxClose.loop = LoopOnce;
-    // emptyFall.loop = LoopOnce;
+      // boxOpen.clampWhenFinished = true;
+      // boxClose.clampWhenFinished = true;
+      // emptyFall.clampWhenFinished = true;
 
-    boxOpen.play();
+      // boxOpen.loop = LoopOnce;
+      // boxClose.loop = LoopOnce;
+      emptyFall.loop = LoopOnce;
 
-    this.mixer?.addEventListener("loop", (e) => {
-      console.log("startBoxAnimation loop event. Action: ", e.action);
+      boxOpen.play();
 
-      if (e.action._clip.name === "box_open") {
-        console.log("box_open done");
+      this.mixer?.addEventListener("loop", (e) => {
+        console.log("startBoxAnimation loop event. Action: ", e.action);
 
-        // boxOpen.paused = true;
-        boxOpen.stop();
-        emptyFall.play();
-        this.textDropAction.play();
-      }
+        if (e.action._clip.name === "box_open") {
+          console.log("box_open done");
 
-      if (e.action._clip.name === "empty_falling") {
-        console.log("empty_falling done");
+          boxOpen.stop();
+          emptyFall.play();
+          // console.log(emptyFall);
+        }
 
-        emptyFall.stop();
-        boxClose.play();
-      }
+        // if (e.action._clip.name === "empty_falling") {
+        //   console.log("empty_falling done");
 
-      if (e.action._clip.name === "box_close") {
-        console.log("box_close done");
+        //   emptyFall.stop();
+        //   boxClose.play();
+        // }
 
-        boxClose.stop();
-      }
-    });
+        if (e.action._clip.name === "box_close") {
+          console.log("box_close done");
+
+          boxClose.stop();
+        }
+      });
+
+      console.log("textMixer in play method", this.textMixer);
+      
+
+      this.textMixer.addEventListener("loop", (e) => {
+        console.log("textMixer.addEventListener event ", e);
+        
+        if (e.actions[0]._clip.name === "empty_falling") {
+          console.log("empty_falling done");
+
+          emptyFall.stop();
+          boxClose.play();
+        }
+      });
+    }
   }
 
   public createTextWithTextGeometry() {

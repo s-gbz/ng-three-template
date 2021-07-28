@@ -1,7 +1,7 @@
 import { ElementRef, Injectable, NgZone, OnDestroy } from '@angular/core';
 
 import * as THREE from 'three';
-import { AnimationClip, AnimationMixer, HemisphereLight, LoopRepeat } from 'three';
+import { AnimationClip, AnimationMixer, HemisphereLight, LoopOnce, LoopRepeat } from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
@@ -84,9 +84,19 @@ export class EngineService implements OnDestroy {
 
   public startBoxAnimation() {
     console.log("startBoxAnimation");
+    const boxOpen = this.mixer.clipAction(this.animations[0]);
+    const boxClose = this.mixer.clipAction(this.animations[1]);
+    const emptyFall = this.mixer.clipAction(this.animations[2]);
 
-    this.mixer.clipAction(this.animations[0]).play();
+    // boxOpen.clampWhenFinished = true;
+    // boxClose.clampWhenFinished = true;
+    // emptyFall.clampWhenFinished = true;
 
+    // boxOpen.loop = LoopOnce;
+    // boxClose.loop = LoopOnce;
+    // emptyFall.loop = LoopOnce;
+
+    boxOpen.play();
 
     this.mixer.addEventListener("loop", (e) => {
       console.log("startBoxAnimation loop event. Action: ", e.action);
@@ -94,21 +104,22 @@ export class EngineService implements OnDestroy {
       if (e.action._clip.name === "box_open") {
         console.log("box_open done");
 
-        this.mixer.clipAction(this.animations[0]).stop();
-        this.mixer.clipAction(this.animations[2]).play();
+        // boxOpen.paused = true;
+        boxOpen.stop();
+        emptyFall.play();
       }
 
       if (e.action._clip.name === "empty_falling") {
         console.log("empty_falling done");
 
-        this.mixer.clipAction(this.animations[2]).stop();
-        this.mixer.clipAction(this.animations[1]).play();
+        emptyFall.stop();
+        boxClose.play();
       }
 
       if (e.action._clip.name === "box_close") {
         console.log("box_close done");
 
-        this.mixer.clipAction(this.animations[1]).stop();
+        boxClose.stop();
       }
     });
   }

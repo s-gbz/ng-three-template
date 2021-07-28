@@ -1,12 +1,14 @@
 import { ElementRef, Injectable, NgZone, OnDestroy } from '@angular/core';
 
 import * as THREE from 'three';
-import { AnimationClip, AnimationMixer, HemisphereLight, LoopOnce, LoopRepeat } from 'three';
+import { AnimationClip, AnimationMixer, HemisphereLight, LoopOnce, LoopRepeat, Mesh } from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 @Injectable({ providedIn: 'root' })
 export class EngineService implements OnDestroy {
+  private importedModel;
+
   private canvas: HTMLCanvasElement;
   private renderer: THREE.WebGLRenderer;
   private scene: THREE.Scene;
@@ -50,12 +52,14 @@ export class EngineService implements OnDestroy {
     const loader = new GLTFLoader();
     loader.load('assets/box_open_close2.glb', (importedModel) => {
       console.log("scene loaded!, ", importedModel);
+      this.importedModel = importedModel;
 
       this.animations = importedModel.animations;
       this.mixer = new THREE.AnimationMixer(importedModel.scene);
 
       this.scene.add(importedModel.scene);
-      
+      this.createTextWithTextGeometry();
+
       this.startBoxAnimation();
     }, () => { }, (error) => {
       console.error(error);
@@ -124,6 +128,37 @@ export class EngineService implements OnDestroy {
     });
   }
 
+  public createTextWithTextGeometry() {
+    const loader = new THREE.FontLoader();
+
+    loader.load('assets/helvetiker_regular.typeface.json', (font) => {
+
+      const textGeometry = new THREE.TextGeometry('Hello World!', {
+        font: font,
+        size: 0.5,
+        height: 0.5,
+      });
+
+      const textMesh = new Mesh(textGeometry);
+      // const empty_falling = this.scene.children[2].children[3]; //. getObjectByName("empty_falling");
+      // textMesh.parent = empty_falling;
+      // const textMixer = new AnimationMixer(textMesh);
+      textMesh.animations.concat(this.animations[2]);
+
+      // this.scene.children[2].children[3].attach(textMesh)
+      
+      // console.log(this.scene.children[2].children[3]);
+      console.log(this.scene);
+      
+      this.scene.add(textMesh);
+    });
+  }
+
+
+  public printCameraInformation() {
+    console.log("printCameraInformation: ", this.camera);
+  }
+
   public animate(): void {
     // We have to run this outside angular zones,
     // because it could trigger heavy changeDetection cycles.
@@ -149,7 +184,7 @@ export class EngineService implements OnDestroy {
 
     // IMPORTANT to enable the animation
     if (this.mixer) {
-      this.mixer.update(0.01); // BETTER
+      this.mixer.update(0.02); // BETTER
       // this.mixer.update(0.1); // For debugging
       // this.mixer.update(this.clock.getDelta());
     }
@@ -164,24 +199,6 @@ export class EngineService implements OnDestroy {
     this.camera.updateProjectionMatrix();
 
     this.renderer.setSize(width, height);
-  }
-
-  public printCameraInformation() {
-    console.log("printCameraInformation: ", this.camera);
-  }
-
-  private findAnimationByName(gltf, name) {
-    var result;
-    gltf.animations.forEach((animation) => {
-      if (animation.name === name) {
-        result = animation
-        return
-      }
-    })
-    if (result == null) {
-      console.error("animation: " + name + " cannot be found!")
-    }
-    return result
   }
 
   ngOnDestroy(): void {

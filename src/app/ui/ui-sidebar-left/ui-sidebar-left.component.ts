@@ -7,8 +7,7 @@ import { EngineService } from 'src/app/engine/engine.service';
 })
 export class UiSidebarLeftComponent implements OnInit {
 
-  public constructor(private engServ: EngineService) {
-  }
+  public constructor(private engServ: EngineService) { }
 
   public ngOnInit(): void { }
 

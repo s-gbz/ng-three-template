@@ -1,19 +1,20 @@
 import { ElementRef, Injectable, NgZone, OnDestroy } from '@angular/core';
 
 import * as THREE from 'three';
-import { AnimationClip, AnimationMixer, LoopRepeat } from 'three';
+import { AnimationClip, AnimationMixer, HemisphereLight, LoopRepeat } from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-// import { OrbitControls } from 'three/examples/js/controls/OrbitControls.js';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 @Injectable({ providedIn: 'root' })
 export class EngineService implements OnDestroy {
   private canvas: HTMLCanvasElement;
   private renderer: THREE.WebGLRenderer;
-  private camera: THREE.PerspectiveCamera;
   private scene: THREE.Scene;
-  private light: THREE.AmbientLight;
+  private light: HemisphereLight;
 
-  private cube: THREE.Mesh;
+  private camera: THREE.PerspectiveCamera;
+  private controls: OrbitControls;
+
   private frameId: number = null;
 
   private animations: THREE.AnimationClip[];
@@ -21,85 +22,74 @@ export class EngineService implements OnDestroy {
   private mixer: THREE.AnimationMixer;
   private clock = new THREE.Clock();
 
-  public constructor(private ngZone: NgZone) {
-  }
+  public constructor(private ngZone: NgZone) { }
 
-  public ngOnDestroy(): void {
-    if (this.frameId != null) {
-      cancelAnimationFrame(this.frameId);
-    }
-  }
-
-  public loadScene(canvas: ElementRef<HTMLCanvasElement>) {
+  public createScene(canvas: ElementRef<HTMLCanvasElement>) {
     // The first step is to get the reference of the canvas element from our HTML document
     this.canvas = canvas.nativeElement;
 
+    this.setupRendererAndScene();
+    this.setupCamera();
+    this.setupLight();
+
+    this.loadBoxModelFromFile();
+  }
+
+  private setupRendererAndScene() {
     this.renderer = new THREE.WebGLRenderer({
       canvas: this.canvas,
-      alpha: true,    // transparent background
+      alpha: true,
       antialias: true // smooth edges
     });
     this.renderer.setSize(window.innerWidth, window.innerHeight);
 
-    // create the scene
     this.scene = new THREE.Scene();
+  }
 
+  private loadBoxModelFromFile() {
     const loader = new GLTFLoader();
-
     loader.load('assets/box_open_close2.glb', (importedModel) => {
       console.log("scene loaded!, ", importedModel);
 
       this.animations = importedModel.animations;
-
       this.mixer = new THREE.AnimationMixer(importedModel.scene);
-      this.action = this.mixer.clipAction(importedModel.animations[0]);
-      console.log("mixer ", this.mixer);
 
-      this.startBoxAnimation();
-
-
-      // let mixer = new AnimationMixer(importedModel.scene);
-      // let loading = mixer.clipAction(this.getAnimation(importedModel, "box_open"));
-      // loading.loop = LoopRepeat;
-      // loading.reset().play();
       this.scene.add(importedModel.scene);
-
+      
+      this.startBoxAnimation();
     }, () => { }, (error) => {
       console.error(error);
     });
+  }
 
-    this.camera = new THREE.PerspectiveCamera(
-      75, window.innerWidth / window.innerHeight, 0.1, 1000
-    );
-    this.camera.position.z = 10;
+  private setupCamera() {
+    this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100);
+    this.camera.position.x = 5.531509444292354;
+    this.camera.position.y = 3.851383153444635;
+    this.camera.position.z = 1.6028883532758373;
     this.scene.add(this.camera);
 
-    // soft white light
-    this.light = new THREE.AmbientLight(0x404040);
-    console.log("light: ", this.light.intensity);
+    this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+  }
 
-    this.light.position.z = 10;
-    this.light.intensity = 10;
+  private setupLight() {
+    this.light = new THREE.HemisphereLight(0x404040);
+    this.light.intensity = 3;
+    this.light.position.x = -5;
+    this.light.position.y = -3;
+    this.light.position.z = -1;
+
     this.scene.add(this.light);
-
-    // const controls = new OrbitControls( this.camera, this.renderer.domElement );
   }
 
   public startBoxAnimation() {
     console.log("startBoxAnimation");
-    // console.log("action ", this.action);
 
-    // this.action.play();
-
-    // this.mixer.clipAction(this.animations[2]).reset();
-    // this.mixer.clipAction(this.animations[1]).reset();
-    // this.mixer.clipAction(this.animations[0]).play().crossFadeTo(this.mixer.clipAction(this.animations[1]), 1, false);
     this.mixer.clipAction(this.animations[0]).play();
 
 
     this.mixer.addEventListener("loop", (e) => {
       console.log("startBoxAnimation loop event. Action: ", e.action);
-      // console.log("box_open done ", e.action._clip.name);
 
       if (e.action._clip.name === "box_open") {
         console.log("box_open done");
@@ -119,16 +109,8 @@ export class EngineService implements OnDestroy {
         console.log("box_close done");
 
         this.mixer.clipAction(this.animations[1]).stop();
-        // this.mixer.clipAction(this.animations[1]).play();
       }
     });
-    // this.mixer.clipAction(this.animations[1]).reset();
-
-    // this.animations.forEach((clip) => {
-    //   console.log(clip);
-
-    //   this.mixer.clipAction(clip).play();
-    // });
   }
 
   public animate(): void {
@@ -173,7 +155,11 @@ export class EngineService implements OnDestroy {
     this.renderer.setSize(width, height);
   }
 
-  private getAnimation(gltf, name) {
+  public printCameraInformation() {
+    console.log("printCameraInformation: ", this.camera);
+  }
+
+  private findAnimationByName(gltf, name) {
     var result;
     gltf.animations.forEach((animation) => {
       if (animation.name === name) {
@@ -185,5 +171,11 @@ export class EngineService implements OnDestroy {
       console.error("animation: " + name + " cannot be found!")
     }
     return result
+  }
+
+  ngOnDestroy(): void {
+    if (this.frameId != null) {
+      cancelAnimationFrame(this.frameId);
+    }
   }
 }

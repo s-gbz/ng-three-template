@@ -24,6 +24,7 @@ export class EngineService implements OnDestroy {
   private mixer: THREE.AnimationMixer;
   private clock = new THREE.Clock();
 
+  private textMesh: Mesh;
   private textDropAction: THREE.AnimationAction;
   private textMixer: THREE.AnimationMixer;
 
@@ -38,6 +39,17 @@ export class EngineService implements OnDestroy {
     this.setupLight();
 
     this.loadBoxModelFromFile();
+  }
+
+  public createSceneWithoutBox(canvas: ElementRef<HTMLCanvasElement>) {
+    // The first step is to get the reference of the canvas element from our HTML document
+    this.canvas = canvas.nativeElement;
+
+    this.setupRendererAndScene();
+    this.setupCamera();
+    this.setupLight();
+
+    this.createTextWithTextGeometry();
   }
 
   private setupRendererAndScene() {
@@ -70,10 +82,10 @@ export class EngineService implements OnDestroy {
   }
 
   private setupCamera() {
-    this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100);
-    this.camera.position.x = 5.531509444292354;
-    this.camera.position.y = 3.851383153444635;
-    this.camera.position.z = 1.6028883532758373;
+    this.camera = new THREE.PerspectiveCamera(25, window.innerWidth / window.innerHeight, 0.1, 100);
+    this.camera.position.x = 3.5493471365329254;
+    this.camera.position.y = 0.46315171809196554;
+    this.camera.position.z = 17.46446300382208;
     this.scene.add(this.camera);
 
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
@@ -133,11 +145,11 @@ export class EngineService implements OnDestroy {
       });
 
       console.log("textMixer in play method", this.textMixer);
-      
+
 
       this.textMixer.addEventListener("loop", (e) => {
         console.log("textMixer.addEventListener event ", e);
-        
+
         if (e.actions[0]._clip.name === "empty_falling") {
           console.log("empty_falling done");
 
@@ -148,28 +160,37 @@ export class EngineService implements OnDestroy {
     }
   }
 
-  public createTextWithTextGeometry() {
+  public createTextWithTextGeometry(text?: string) {
     const loader = new THREE.FontLoader();
 
     loader.load('assets/helvetiker_regular.typeface.json', (font) => {
 
-      const textGeometry = new THREE.TextGeometry('Hello World!', {
+      const boxText = text ? text : 'Hello World!';
+
+      const textGeometry = new THREE.TextGeometry(boxText, {
         font: font,
-        size: 0.5,
+        size: 1,
         height: 0.5,
       });
 
-      const textMesh = new Mesh(textGeometry);
-      this.textMixer = new AnimationMixer(textMesh);
-      this.textDropAction = this.textMixer.clipAction(this.animations[2]);
+      if (this.textMesh) {
+        this.scene.remove(this.textMesh);
+      } 
+
+      this.textMesh = new Mesh(textGeometry);
+      this.textMesh.position.x = -3.5;
+      console.log(this.textMesh.position);
+
+      this.textMixer = new AnimationMixer(this.textMesh);
+      // this.textDropAction = this.textMixer.clipAction(this.animations[2]);
 
 
-      console.log("textMesh ", textMesh);
-      console.log("textMixer ", this.textMixer);
-      console.log("textDropAction ", this.textDropAction);
+      // console.log("textMesh ", textMesh);
+      // console.log("textMixer ", this.textMixer);
+      // console.log("textDropAction ", this.textDropAction);
 
 
-      this.scene.add(textMesh);
+      this.scene.add(this.textMesh);
     });
   }
 
